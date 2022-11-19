@@ -1,0 +1,6 @@
+.vs
+.vscode
+WebView2 Rewrite/bin
+WebView2 Rewrite/obj
+WebView2 Rewrite WinUI 3/bin
+WebView2 Rewrite WinUI 3/obj

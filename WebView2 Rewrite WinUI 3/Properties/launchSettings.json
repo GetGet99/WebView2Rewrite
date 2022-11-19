@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WebView2 Rewrite WinUI 3 (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WebView2 Rewrite WinUI 3 (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

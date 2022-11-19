@@ -1,0 +1,2 @@
+MainPackage=D:\Programming\VS\WebView2 Rewrite\WebView2 Rewrite\bin\x86\Release\WebView2 Rewrite_1.0.0.0_x86.msix
+SymbolPackage=D:\Programming\VS\WebView2 Rewrite\WebView2 Rewrite\obj\x86\Release\Symbols\WebView2 Rewrite_1.0.0.0_x86.appxsym
