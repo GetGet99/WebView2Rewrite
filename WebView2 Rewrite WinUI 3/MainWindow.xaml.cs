@@ -17,7 +17,15 @@ using Window = WinWrapper.Window;
 using WinWrapper;
 using WinRT.Interop;
 using Windows.Win32;
-using WebView2 = WebView2_Rewrite.WebView2;
+using WebView2_Rewrite;
+using Microsoft.Web.WebView2.Core;
+using WebView2 = Microsoft.UI.Xaml.Controls.WebView2;
+using Microsoft.UI.Composition.Interactions;
+using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Windows.Win32.Foundation;
+//using WebView2 = WebView2_Rewrite.WebView2;
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -29,27 +37,59 @@ namespace WebView2_Rewrite_WinUI_3
     public sealed partial class MainWindow : WinUIWindow
     {
         readonly WebView2 WebView2;
-        Window Window;
+        readonly Window Win32Window;
         //SubClassWindowMessageMonitor WndMsgMonitor;
+        ElementInteractionTracker ElementInteractionTracker;
         public MainWindow()
         {
-            WebView2 = new(this);
+            WebView2 = new();
             this.InitializeComponent();
             WebView2Place.Child = WebView2;
-            //new Microsoft.UI.Xaml.Controls.WebView2();
-            Window = Window.FromWindowHandle(WindowNative.GetWindowHandle(this));
+            Win32Window = Window.FromWindowHandle(WindowNative.GetWindowHandle(this));
             DoStuff();
-            //WndMsgMonitor = new(Window);
-            //WndMsgMonitor.WindowMessageReceived += WndMsgMonitor_WindowMessageReceived;
+            ElementInteractionTracker = new ElementInteractionTracker(WebView2);
+            ElementInteractionTracker.CustomAnimationStateEnteredEvent += ElementInteractionTracker_CustomAnimationStateEnteredEvent;
+            ElementInteractionTracker.ValuesChangedEvent += ElementInteractionTracker_ValuesChanged;
+            PrevPosition = ElementInteractionTracker.ScrollPresenterVisualInteractionSource.Position;
+            ExtendsContentIntoTitleBar = true;
+            new WinWrapper.SubClassWindowMessageMonitor().WindowMessageReceived += MainWindow_WindowMessageReceived;
         }
 
-        //private Windows.Win32.Foundation.LRESULT? WndMsgMonitor_WindowMessageReceived(Windows.Win32.Foundation.HWND hWnd, uint uMsg, Windows.Win32.Foundation.WPARAM wParam, Windows.Win32.Foundation.LPARAM lParam)
-        //{
-            //if (Keyboard.IsShiftDown)
-            //    return PInvoke.SendMessage(PInvoke.GetFocus(), uMsg, wParam, lParam);
-            //return null;
-        //}
+        private LRESULT? MainWindow_WindowMessageReceived(HWND hWnd, uint uMsg, WPARAM wParam, LPARAM lParam)
+        {
+            
+        }
 
+        //Point CursorPos;
+        private void ElementInteractionTracker_CustomAnimationStateEnteredEvent(InteractionTrackerCustomAnimationStateEnteredArgs obj)
+        {
+            
+        }
+
+        Vector3 PrevPosition;
+        async void ElementInteractionTracker_ValuesChanged(InteractionTrackerValuesChangedArgs obj)
+        {
+            PInvoke.GetCursorPos(out var pt);
+            var winloc = Win32Window.ClientBounds.Location;
+            var CoreWebView2 = WebView2.CoreWebView2;
+            if (CoreWebView2 is null) return;
+            var delta = obj.Position - PrevPosition;
+            PrevPosition = obj.Position;
+            //_ = CoreWebView2.ExecuteScriptAsync($"console.log('{pt.X - winloc.X}, {pt.Y - winloc.Y}')");
+            await CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchMouseEvent", @$"
+{{
+    ""type"": ""mouseWheel"",
+    ""x"": {pt.X - winloc.X},
+    ""y"": {pt.Y - winloc.Y},
+    ""deltaX"": {delta.X},
+    ""deltaY"": {delta.Y}
+}}");
+            await CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.setPageScaleFactor", @$"
+{{
+    ""pageScaleFactor"": {obj.Scale}
+}}");
+            
+        }
         async void DoStuff()
         {
             await WebView2.EnsureCoreWebView2Async();

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Numerics;
-using Windows.UI.Composition.Interactions;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Hosting;
+using Microsoft.UI.Composition.Interactions;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Hosting;
 
 namespace WebView2_Rewrite
 {
@@ -14,8 +14,8 @@ namespace WebView2_Rewrite
         {
             var visual = ElementCompositionPreview.GetElementVisual(element);
             InteractionTracker = InteractionTracker.CreateWithOwner(visual.Compositor, this);
-            InteractionTracker.MinPosition = new System.Numerics.Vector3(-1000, -1000, -1000);
-            InteractionTracker.MaxPosition = new System.Numerics.Vector3(1000, 1000, 1000);
+            InteractionTracker.MinPosition = new Vector3(-1000, -1000, -1000);
+            InteractionTracker.MaxPosition = new Vector3(1000, 1000, 1000);
             InteractionTracker.MinScale = 0.5f;
             InteractionTracker.MaxScale = 5f;
 
@@ -42,7 +42,7 @@ namespace WebView2_Rewrite
         }
         public void CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args)
         {
-
+            CustomAnimationStateEnteredEvent?.Invoke(args);
         }
 
         public void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args)
@@ -71,6 +71,7 @@ namespace WebView2_Rewrite
             InteractionTracker.MaxPosition = args.Position + Vec;
             ValuesChangedEvent?.Invoke(args);
         }
+        public event Action<InteractionTrackerCustomAnimationStateEnteredArgs>? CustomAnimationStateEnteredEvent;
         public event Action<InteractionTrackerValuesChangedArgs>? ValuesChangedEvent;
     }
 }

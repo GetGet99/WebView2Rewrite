@@ -123,10 +123,14 @@ public class WebView2 : UserControl
     public CoreWebView2CompositionController? CoreWebView2CompositionController => m_coreWebViewCompositionController;
     public CoreWebView2? CoreWebView2 => m_coreWebView;
     event Action? CoreWebView2Initialized;
-    InteractionTracker InteractionTracker;
+    readonly ElementInteractionTracker ElementInteractionTracker;
     public WebView2()
     {
-        InteractionTracker = InteractionTracker.CreateWithOwner(ElementCompositionPreview.GetElementVisual(this).Compositor, new InteractionTrackerOwner());
+        // MODIFIED
+        ElementInteractionTracker = new(this);
+        ElementInteractionTracker.ValuesChangedEvent += ElementInteractionTracker_ValuesChanged;
+        PrevPosition = ElementInteractionTracker.ScrollPresenterVisualInteractionSource.Position;
+        // END MODIFIED
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
 
@@ -147,6 +151,27 @@ public class WebView2 : UserControl
         // Set the background for WebView2 to ensure it will be visible to hit-testing.
         Background = new SolidColorBrush(Colors.Transparent);
     }
+    // MODIFIED
+    Vector3 PrevPosition;
+    async void ElementInteractionTracker_ValuesChanged(InteractionTrackerValuesChangedArgs obj)
+    {
+        if (CoreWebView2 is null) return;
+        var delta = obj.Position - PrevPosition;
+        PrevPosition = obj.Position;
+        await CoreWebView2.CallDevToolsProtocolMethodAsync("Input.dispatchMouseEvent", @$"
+{{
+    ""type"": ""mouseWheel"",
+    ""x"": {100},
+    ""y"": {100},
+    ""deltaX"": {delta.X},
+    ""deltaY"": {delta.Y}
+}}");
+        await CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.setPageScaleFactor", @$"
+{{
+    ""pageScaleFactor"": {obj.Scale}
+}}");
+    }
+    // END MODIFIED
     void OnManipulationModePropertyChanged(DependencyObject? sender, DependencyProperty? dp)
         => Environment.FailFast("WebView2.ManipulationMode cannot be set to anything other than \"None\".");
 
@@ -1025,6 +1050,7 @@ public class WebView2 : UserControl
         {
             if (message == PInvoke.WM_MOUSELEAVE)
             {
+                Debug.WriteLine($"Message: {(CoreWebView2MouseEventKind)message} VirtualKey: {CoreWebView2MouseEventVirtualKeys.None} Mouse Data: {0} Position: {default(Point)}");
                 m_coreWebViewCompositionController.SendMouseInput(
                     (CoreWebView2MouseEventKind)message,
                     CoreWebView2MouseEventVirtualKeys.None,
@@ -1050,6 +1076,7 @@ public class WebView2 : UserControl
                 {
                     mouse_data = (uint)GET_XBUTTON_WPARAM(w_param);
                 }
+                Debug.WriteLine($"Message: {(CoreWebView2MouseEventKind)message} VirtualKey: {(CoreWebView2MouseEventVirtualKeys)GET_KEYSTATE_WPARAM(w_param)} Mouse Data: {mouse_data} Position: {coords}");
                 m_coreWebViewCompositionController.SendMouseInput(
                     (CoreWebView2MouseEventKind)message,
                 (CoreWebView2MouseEventVirtualKeys)GET_KEYSTATE_WPARAM(w_param),

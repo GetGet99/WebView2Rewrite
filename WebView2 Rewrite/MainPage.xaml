@@ -10,16 +10,7 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 
     <Grid>
-        <Button Click="Button_Click" Canvas.ZIndex="2" Content="Click Me" Visibility="Collapsed"/>
         <Border x:Name="WebView2Place">
         </Border>
-        <Border x:Name="Border" Background="Transparent" Visibility="Visible">
-            <Rectangle x:Name="Rectangle" Fill="Transparent" IsHitTestVisible="False" Height="100" Width="100"/>
-        </Border>
-        <muxc:ScrollView x:Name="ScrollView" Background="Red" ZoomMode="Enabled" Visibility="Collapsed">
-            <StackPanel x:Name="StackPanel" Spacing="16">
-                
-            </StackPanel>
-        </muxc:ScrollView>
     </Grid>
 </Page>
